@@ -1,0 +1,5 @@
+# Change these at your peril:
+export PROJECT_NAME=acronym
+export REPO_NAME=acronym
+export DESCRIPTION=A Critical oveRview of wOrd-play in europeaN research over 30 Years tiMe
+export PROJECT_OPENNESS=public
