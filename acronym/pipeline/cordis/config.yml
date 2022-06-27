@@ -1,0 +1,18 @@
+framework_programmes:
+  - fp1
+  - fp2
+  - fp3
+  - fp4
+  - fp5
+  - fp6
+  - fp7
+  - h2020
+xml_project_urls:
+  fp1: https://cordis.europa.eu/data/FP1/cordis-fp1projects-xml.zip
+  fp2: https://cordis.europa.eu/data/FP2/cordis-fp2projects-xml.zip
+  fp3: https://cordis.europa.eu/data/FP3/cordis-fp3projects-xml.zip
+  fp4: https://cordis.europa.eu/data/FP4/cordis-fp4projects-xml.zip
+  fp5: https://cordis.europa.eu/data/FP5/cordis-fp5projects-xml.zip
+  fp6: https://cordis.europa.eu/data/FP6/cordis-fp6projects-xml.zip
+  fp7: https://cordis.europa.eu/data/cordis-fp7projects-xml.zip
+  h2020: https://cordis.europa.eu/data/cordis-h2020projects-xml.zip
