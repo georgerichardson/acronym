@@ -2,6 +2,7 @@ from io import BytesIO
 import logging
 import pathlib
 import requests
+import tqdm
 from urllib.request import urlretrieve
 import zipfile
 
@@ -23,7 +24,11 @@ def make_path_if_not_exist(path: Union[pathlib.Path, str]):
         path.mkdir(parents=True)
 
 
-def fetch(url: str, fout: Union[pathlib.Path, str] = None):
+def fetch(
+    url: str,
+    fout: Union[pathlib.Path, str] = None,
+    timeout: int = 10,
+):
     """Downloads an object from a url.
 
     Args:
@@ -32,16 +37,40 @@ def fetch(url: str, fout: Union[pathlib.Path, str] = None):
             bytes object.
 
     Returns:
-        BytesIO of retrieved object.
+        bio: BytesIO of retrieved object if `fout` is not None.
     """
     logger.info(f"Downloading {url}")
 
     if fout is not None:
-        make_path_if_not_exist(fout)
-        urlretrieve(url, fout)
+        path = "/".join(str(fout).split("/")[:-1])
+        make_path_if_not_exist(path)
+        with open(fout, "wb") as f:
+            for chunk in stream(url, timeout=timeout):
+                f.write(chunk)
     else:
-        r = requests.get(url)
-        return BytesIO(r.content)
+        bio = BytesIO()
+        for chunk in stream(url, timeout=timeout):
+            bio.write(chunk)
+        return bio
+
+
+def stream(
+    url: str,
+    timeout: int = None,
+):
+    chunk_size = 1024 * 1024
+    resp = requests.get(url, stream=True, timeout=timeout)
+    total = int(resp.headers.get("content-length", 0))
+    with tqdm.tqdm(
+        desc=url,
+        total=total,
+        unit="b",
+        unit_scale=True,
+        unit_divisor=1024,
+    ) as bar:
+        for chunk in resp.iter_content(chunk_size=chunk_size):
+            bar.update(len(chunk))
+            yield chunk
 
 
 def extractall(bytes: BytesIO, path: Union[pathlib.Path, str]):
