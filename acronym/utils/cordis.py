@@ -134,7 +134,7 @@ def parse_cordis_organizations(
     for col in float_cols:
         if data[col].dtype == "O":
             data[col] = pd.to_numeric(
-                (data[col].str.replace(",", ".").str.replace(" ", "")),
+                data[col].str.replace(",", ".").str.replace(" ", ""),
                 errors="coerce",  # unbelievably some of the funding data has xxxxx for missing vals
             )
     data = data.drop(drop_cols, axis=1)
