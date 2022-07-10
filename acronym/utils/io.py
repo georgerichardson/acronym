@@ -58,6 +58,7 @@ def stream(
     url: str,
     timeout: int = None,
 ):
+    """Streams a file from a url in 1MB chunks."""
     chunk_size = 1024 * 1024
     resp = requests.get(url, stream=True, timeout=timeout)
     total = int(resp.headers.get("content-length", 0))
