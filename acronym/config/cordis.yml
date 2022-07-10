@@ -1,0 +1,90 @@
+framework_programmes:
+  - fp1
+  - fp2
+  - fp3
+  - fp4
+  - fp5
+  - fp6
+  - fp7
+  - h2020
+xml_project_urls:
+  fp1: https://cordis.europa.eu/data/FP1/cordis-fp1projects-xml.zip
+  fp2: https://cordis.europa.eu/data/FP2/cordis-fp2projects-xml.zip
+  fp3: https://cordis.europa.eu/data/FP3/cordis-fp3projects-xml.zip
+  fp4: https://cordis.europa.eu/data/FP4/cordis-fp4projects-xml.zip
+  fp5: https://cordis.europa.eu/data/FP5/cordis-fp5projects-xml.zip
+  fp6: https://cordis.europa.eu/data/FP6/cordis-fp6projects-xml.zip
+  fp7: https://cordis.europa.eu/data/cordis-fp7projects-xml.zip
+  h2020: https://cordis.europa.eu/data/cordis-h2020projects-xml.zip
+csv_project_urls:
+  fp1: https://cordis.europa.eu/data/FP1/cordis-fp1projects.csv
+  fp2: https://cordis.europa.eu/data/FP2/cordis-fp2projects.csv
+  fp3: https://cordis.europa.eu/data/FP3/cordis-fp3projects.csv
+  fp4: https://cordis.europa.eu/data/FP4/cordis-fp4projects.csv
+  fp5: https://cordis.europa.eu/data/FP5/cordis-fp5projects.csv
+  fp6: https://cordis.europa.eu/data/FP6/cordis-fp6projects.csv
+  fp7: https://cordis.europa.eu/data/cordis-fp7projects-csv.zip
+  h2020: https://cordis.europa.eu/data/cordis-h2020projects-csv.zip
+csv_organization_urls: # orgs are included with the downloads from csv_project_urls for FP7 and H2020
+  fp1: https://cordis.europa.eu/data/FP1/cordis-fp1organizations.csv
+  fp2: https://cordis.europa.eu/data/FP2/cordis-fp2organizations.csv
+  fp3: https://cordis.europa.eu/data/FP3/cordis-fp3organizations.csv
+  fp4: https://cordis.europa.eu/data/FP4/cordis-fp4organizations.csv
+  fp5: https://cordis.europa.eu/data/FP5/cordis-fp5organizations.csv
+  fp6: https://cordis.europa.eu/data/FP6/cordis-fp6organizations.csv
+  fp7: false
+  h2020: false
+csv_project_read_opts:
+  fp1_to_fp6:
+    sep: ;
+    decimal: ","
+    parse_dates:
+      - startDate
+      - endDate
+  fp7_to_h2020:
+    sep: ;
+    decimal: ","
+    parse_dates:
+      - startDate
+      - endDate
+      - ecSignatureDate
+      - contentUpdateDate
+csv_project_parse_opts:
+  fp1_to_fp6:
+    list_sep: ;
+    list_cols:
+      - participants
+      - participantCountries
+    drop_cols:
+      - subjects
+csv_organization_read_opts:
+  fp1_to_fp6:
+    sep: "\t"
+    low_memory: false
+    decimal: ","
+  fp7_to_h2020:
+    sep: ;
+    parse_dates:
+      - contentUpdateDate
+    decimal: ","
+    low_memory: false
+csv_organization_parse_opts:
+  fp1_to_fp6:
+    float_cols:
+      - ecContribution
+    drop_cols:
+      - contactForm
+      - contactType
+      - contactTitle
+      - contactFirstNames
+      - contactLastNames
+      - contactFunction
+      - contactTelephoneNumber
+      - contactFaxNumber
+  fp7_to_h2020:
+    float_cols:
+      - ecContribution
+      - totalCost
+      - netEcContribution
+    drop_cols:
+      - nutsCode
