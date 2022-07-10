@@ -16,7 +16,7 @@ CONFIG = get_yaml_config(PROJECT_DIR / "acronym/config/cordis.yml")
 
 def cordis_file_path(
     fp: str,
-    sub_dir: Optional[str] = None,
+    sub_dir: str = "",
 ) -> pathlib.Path:
     """cordis_file_path
     Create the file path for datasets for a CORDIS Framework Programme.
@@ -29,10 +29,7 @@ def cordis_file_path(
     Returns:
         (str): File path
     """
-    if sub_dir is None:
-        return CORDIS_DATA_DIR / fp
-    else:
-        return CORDIS_DATA_DIR / f"{fp}/{sub_dir}"
+    return CORDIS_DATA_DIR / f"{fp}/{sub_dir}"
 
 
 def fetch_xml_projects(fp: str = "h2020"):
@@ -137,7 +134,7 @@ def parse_cordis_organizations(
     for col in float_cols:
         if data[col].dtype == "O":
             data[col] = pd.to_numeric(
-                data[col].str.replace(",", ".").str.replace(" ", ""),
+                (data[col].str.replace(",", ".").str.replace(" ", "")),
                 errors="coerce",  # unbelievably some of the funding data has xxxxx for missing vals
             )
     data = data.drop(drop_cols, axis=1)
