@@ -18,7 +18,7 @@ import pandas as pd
 from typing import Dict, List
 import xmltodict
 
-from acronym.utils.cordis import cordis_file_path
+from acronym.utils.cordis import cordis_input_path, cordis_output_path
 
 
 def projects(fp: str = "h2020") -> pd.DataFrame:
@@ -30,7 +30,7 @@ def projects(fp: str = "h2020") -> pd.DataFrame:
     Returns:
         Dataframe of projects for the framework programme.
     """
-    path = cordis_file_path(fp) / "project.csv"
+    path = cordis_input_path(fp) / "project.csv"
     return pd.read_csv(path)
 
 
@@ -43,7 +43,7 @@ def organizations(fp: str = "h2020") -> pd.DataFrame:
     Returns:
         Dataframe of organizations for the framework programme.
     """
-    path = cordis_file_path(fp) / "organization.csv"
+    path = cordis_input_path(fp) / "organization.csv"
     return pd.read_csv(path)
 
 
@@ -57,7 +57,7 @@ def projects_records(fp: str = "h2020") -> List[Dict]:
     Returns:
         records: List of dict records where each record is a
     """
-    xml_dir = cordis_file_path(fp, "xml_projects")
+    xml_dir = cordis_input_path(fp, "xml_projects")
 
     records = []
     for file in os.listdir(xml_dir):
@@ -68,3 +68,16 @@ def projects_records(fp: str = "h2020") -> List[Dict]:
             records.append(xmltodict.parse(f.read()))
 
     return records
+
+
+def acronymity(fp: str):
+    """Acronym matches and scores for CORDIS projects in a framework programme.
+
+    Args:
+        fp: Framework programme abbreviation.
+
+    Returns:
+        Dataframe of acronym matches and scores.
+    """
+    path = cordis_output_path(fp) / "acronyms.csv"
+    return pd.read_csv(path)
