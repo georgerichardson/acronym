@@ -88,3 +88,8 @@ csv_organization_parse_opts:
       - netEcContribution
     drop_cols:
       - nutsCode
+acronym_match:
+  min_term_len: 1
+  min_order: 1
+  max_order: 3
+  title_stops_path: "inputs/data/cordis/title_term_stops.txt"

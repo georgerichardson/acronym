@@ -10,33 +10,50 @@ from acronym.utils.io import extractall, fetch
 from acronym.utils.text import camel_to_snake
 
 
-CORDIS_DATA_DIR = PROJECT_DIR / "inputs/data/cordis/"
+CORDIS_INPUT_DATA_DIR = PROJECT_DIR / "inputs/data/cordis/"
+CORDIS_OUTPUT_DATA_DIR = PROJECT_DIR / "outputs/data/cordis/"
 CONFIG = get_yaml_config(PROJECT_DIR / "acronym/config/cordis.yml")
 
 
-def cordis_file_path(
+def cordis_input_path(
     fp: str,
     sub_dir: str = "",
 ) -> pathlib.Path:
-    """cordis_file_path
-    Create the file path for datasets for a CORDIS Framework Programme.
+    """Create the file path for input datasets for a CORDIS Framework Programme.
 
     Args:
-        fp (str): Abbreviation of Framework Programme.
-        sub_dir (str): Name of optional subdirectory. E.g. to create a sub
+        fp: Abbreviation of Framework Programme.
+        sub_dir: Name of optional subdirectory. E.g. to create a sub
             directory for individual project XML files.
 
     Returns:
-        (str): File path
+        File path
     """
-    return CORDIS_DATA_DIR / f"{fp}/{sub_dir}"
+    return CORDIS_INPUT_DATA_DIR / f"{fp}/{sub_dir}"
+
+
+def cordis_output_path(
+    fp: str,
+    sub_dir: str = "",
+) -> pathlib.Path:
+    """Create the file path for output datasets for a CORDIS Framework Programme.
+
+    Args:
+        fp: Abbreviation of Framework Programme.
+        sub_dir: Name of optional subdirectory. E.g. to create a sub
+            directory for multiple output files.
+
+    Returns:
+        File path
+    """
+    return CORDIS_OUTPUT_DATA_DIR / f"{fp}/{sub_dir}"
 
 
 def fetch_xml_projects(fp: str = "h2020"):
     """Downloads projects as individual XML files to `inputs/`."""
     url = CONFIG["xml_project_urls"][fp]
     xmls = fetch(url)
-    extractall(xmls, cordis_file_path(fp, "xml_projects"))
+    extractall(xmls, cordis_input_path(fp, "xml_projects"))
 
 
 def _rearrange_projects(end_dir: Union[pathlib.Path, str]):
@@ -55,18 +72,18 @@ def fetch_projects(fp: str = "h2020"):
     url = CONFIG["csv_project_urls"][fp]
     if fp in ["fp7", "h2020"]:
         data = fetch(url)
-        path = cordis_file_path(fp)
+        path = cordis_input_path(fp)
         extractall(data, path)
         _rearrange_projects(path)
     else:
-        fname = cordis_file_path(fp) / "project.csv"
+        fname = cordis_input_path(fp) / "project.csv"
         fetch(url, fname)
 
 
 def fetch_organizations(fp: str = "fp6"):
     """Downloads organizations as a csv to `inputs/`."""
     url = CONFIG["csv_organization_urls"][fp]
-    fname = cordis_file_path(fp) / "organization.csv"
+    fname = cordis_input_path(fp) / "organization.csv"
     fetch(url, fname)
 
 
@@ -111,7 +128,7 @@ def reformat_project_csv(fp: str = "h2020"):
         read_opts = CONFIG["csv_project_read_opts"]["fp7_to_h2020"]
         parse_opts = {}
 
-    path = cordis_file_path(fp) / "project.csv"
+    path = cordis_input_path(fp) / "project.csv"
     data = pd.read_csv(path, **read_opts)
     data = parse_cordis_projects(data, **parse_opts)
 
@@ -159,7 +176,7 @@ def reformat_organization_csv(fp: str = "h2020"):
         read_opts = CONFIG["csv_organization_read_opts"]["fp7_to_h2020"]
         parse_opts = CONFIG["csv_organization_parse_opts"]["fp7_to_h2020"]
 
-    path = cordis_file_path(fp) / "organization.csv"
+    path = cordis_input_path(fp) / "organization.csv"
     data = pd.read_csv(path, **read_opts)
     data = parse_cordis_organizations(data, **parse_opts)
 
