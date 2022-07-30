@@ -20,7 +20,7 @@ Finds the best match between each project's acronym and title. The algorithm att
 python acronym/pipeline/cordis/acronym_match.py
 ```
 
-The acronymity results for CORDIS are saved to `outputs/data/cordis/{framework_programme}/acronymity.csv`. The fields in each file are:
+The acronymity results for CORDIS are saved to `outputs/data/cordis/{framework_programme}/acronyms.csv`. The fields in each file are:
 
 - `acronym`: The original acronym.
 - `{order}_match`: The closest match within the title.
