@@ -150,6 +150,7 @@ def acronymity(
         title_terms = pipe(
             title,
             lambda t: t.lower(),
+            remove_acronym_from_title,
             split_title,
             lambda t: remove_title_stops(t, min_term_len, stops),
             lambda t: extract_nth_characters(t, order),
