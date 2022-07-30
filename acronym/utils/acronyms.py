@@ -1,17 +1,20 @@
 from Levenshtein import distance
 import re
+from toolz.functoolz import pipe
 
-from typing import Dict, Iterable, List, Tuple
+from typing import Dict, Iterable, List, Tuple, Set, Union
+
 from acronym import PROJECT_DIR
-
 from acronym.utils.text import substring_in_string
 
 
 OUT_DIR = PROJECT_DIR / "outputs/data/acronym_match/"
 
 
-def remove_long_numbers(acronym: str) -> str:
-    """Removes any number with more than one digit from an acronym."""
+def remove_multi_digits(acronym: str) -> str:
+    """Removes numbers from a string that are comprised of 2 or more continuous
+    digits.
+    """
     nums = re.findall(r"\d+", acronym)
     for num in nums:
         if len(num) > 1:
@@ -53,17 +56,58 @@ def split_title(title: str) -> List[str]:
 def extract_nth_characters(
     title_terms: Iterable[str],
     n: int = 1,
-) -> str:
+) -> List[str]:
     """Creates a string from the first `n` characters of each token in a list."""
-    return "".join(t[:n] for t in title_terms)
+    return [t[:n] for t in title_terms]
 
 
-def find_acronym_in_title(
+def remove_title_stops(
+    title_terms: Iterable[str],
+    min_term_len: int,
+    stops: List[str],
+) -> List[str]:
+    """Returns title terms that are equal to or longer than `min_term_len` and
+    that are not in `stops`.
+    """
+    return [t for t in title_terms if (len(t) >= min_term_len) and (t not in stops)]
+
+
+def find_title_acronym(
+    acronym: str,
+    title_terms: Iterable[str],
+) -> Tuple[str, Set[int]]:
+    """Finds the closest matching acronym-like string in a set of (truncated)
+    terms from a project title.
+    """
+    title_acronym = ""
+    title_term_ids = []
+    start_term = 0
+
+    title_terms = list([i, t] for i, t in enumerate(title_terms))
+
+    for char in acronym:
+        for term_id, term in title_terms[start_term:]:
+            idx = term.find(char)
+            if idx >= 0:
+                title_acronym = title_acronym + char
+                title_term_ids.append(term_id)
+
+                title_terms[term_id][1] = term[idx + 1 :]
+                start_term = term_id
+
+                break
+
+    return title_acronym, set(title_term_ids)
+
+
+def acronymity(
     acronym: str,
     title: str,
     min_term_len: int,
-    order: int,
-) -> str:
+    min_order: int,
+    max_order: int,
+    stops: List[str],
+) -> Dict[str, Union[str, int]]:
     """Finds characters of the acronym within the first `n` characters of the
     title tokens. This attempts to find each character in the acronym in the
     order that they appear. When a character is found, the search begins again
@@ -73,76 +117,55 @@ def find_acronym_in_title(
         acronym: A project's acronym.
         title: A project's title.
         min_term_len: Drop any tokens from the title that are shorter than this.
-        order: Include the first characters from each title token up to this
-            value.
+        min_order: The minimum number of first characters from each title token
+            to include.
+        max_order: The minimum number of first characters from each title token
+            to include.
+        stops: List of stop words to drop from tokenized titles.
 
     Returns:
-        title_acronym: Matching characters from the search.
+        record: A dictionary containing:
+            - acronym: The original acronym.
+            - {order}_match: The closest match within the title.
+            - {order}_dist: The Levenshtein distance between the `acronym` and
+                `{order}_match`.
+            - {order}_n_terms_used: The number of terms in the title used to
+                construct `{order}_match`.
+            - n_title_terms: The number of title terms available to search for
+                a match.
+            Where `order` is the number of first characters used from each
+            term in the title.
+            This information is referred to as the `acronymity` of a project.
     """
 
-    title_terms = [t for t in split_title(title) if len(t) >= min_term_len]
-    title_characters = extract_nth_characters(
-        title_terms,
-        order,
+    acronym = pipe(
+        acronym,
+        lambda a: a.lower(),
+        remove_multi_digits,
     )
 
-    title_acronym = ""
-
-    for char in acronym:
-        idx = title_characters.find(char)
-        if idx >= 0:
-            title_acronym = title_acronym + char
-            title_characters = title_characters[idx + 1 :]
-        else:
-            continue
-
-    return title_acronym
-
-
-def acronymity(
-    acronym: str,
-    title: str,
-    min_term_len: int = 3,
-    order_range: Tuple[int, int] = (1, 3),
-) -> Dict:
-    """Finds the characters in a project title that recreate its acronym.
-    The search is performed iteratively across `order_range` and the
-    Levenstein score is returned for each order. The search is case
-    insensitive.
-
-    Args:
-        acronym: A project's acronym.
-        title: A project's title.
-        min_term_len: Drop any tokens from the title that are shorter than this.
-        order_range: Include the first characters from each title token up to this
-            value.
-
-    Returns:
-        record: Contains the matching characters and their Levenstein score
-        with the acronym for each value in `order_range`. Keys are:
-            - acronym: the original acronym in lower case
-            - {order}_match: The title characters matching at this order.
-            - {order}_score: The Levenstein distance between the match and the
-                acronym at this order.
-    """
-
-    acronym = acronym.lower().replace(" ", "")
     title = title.lower()
 
     record = {"acronym": acronym}
 
-    low, high = order_range[0], order_range[1] + 1
-    for order in range(low, high):
-        match = find_acronym_in_title(
-            acronym,
+    for order in range(min_order, max_order + 1):
+        title_terms = pipe(
             title,
-            min_term_len=min_term_len,
-            order=order,
+            lambda t: t.lower(),
+            split_title,
+            lambda t: remove_title_stops(t, min_term_len, stops),
+            lambda t: extract_nth_characters(t, order),
         )
 
-        score = distance(acronym, match)
+        title_acronym, title_term_ids = find_title_acronym(
+            acronym,
+            title_terms,
+        )
 
-        record[f"{order}_match"] = match
-        record[f"{order}_lev_dist"] = score
+        record[f"{order}_match"] = title_acronym
+        record[f"{order}_dist"] = distance(acronym, title_acronym)
+        record[f"{order}_n_terms_used"] = len(title_term_ids)
+
+    record["n_title_terms"] = len(title_terms)
 
     return record
