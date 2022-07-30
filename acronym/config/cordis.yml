@@ -104,3 +104,4 @@ acronym_match:
     - with
   min_order: 1
   max_order: 3
+  title_stops_path: "inputs/data/cordis/title_term_stops.txt"
