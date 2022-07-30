@@ -91,10 +91,8 @@ def find_title_acronym(
             if idx >= 0:
                 title_acronym = title_acronym + char
                 title_term_ids.append(term_id)
-
                 title_terms[term_id][1] = term[idx + 1 :]
                 start_term = term_id
-
                 break
 
     return title_acronym, set(title_term_ids)
