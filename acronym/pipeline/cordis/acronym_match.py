@@ -1,13 +1,10 @@
 import logging
 from pandas import DataFrame
 
+from acronym import PROJECT_DIR
 from acronym.utils.cordis import CONFIG, cordis_output_path
 from acronym.getters.cordis import projects
-from acronym.utils.acronyms import (
-    acronymity,
-    remove_acronym_from_title,
-    remove_long_numbers,
-)
+from acronym.utils.acronyms import acronymity
 from acronym.utils.io import make_path_if_not_exist
 
 
@@ -20,33 +17,24 @@ if __name__ == "__main__":
         logger.info(f"Finding acronynm matches for CORDIS {fp.upper()}")
 
         projects_fp = projects(fp)
-
         acronyms = projects_fp["acronym"].fillna("X").tolist()
-        acronyms = list(map(lambda a: remove_long_numbers(a), acronyms))
-
         titles = projects_fp["title"].tolist()
-        titles = list(
-            map(
-                lambda a, t: remove_acronym_from_title(a, t),
-                acronyms,
-                titles,
-            )
-        )
+        with open(PROJECT_DIR / CONFIG["acronym_match"]["title_stops_path"], "r") as f:
+            title_stops = f.readlines()
 
         acronymity_records = list(
             map(
                 lambda a, t: acronymity(
                     a,
                     t,
-                    min_term_len=CONFIG["acronym"]["min_term_len"],
-                    order_range=(
-                        CONFIG["acronym"]["min_order"],
-                        CONFIG["acronym"]["max_order"],
-                    ),
+                    min_term_len=CONFIG["acronym_match"]["min_term_len"],
+                    min_order=CONFIG["acronym_match"]["min_order"],
+                    max_order=CONFIG["acronym_match"]["max_order"],
+                    stops=title_stops,
                 ),
-                acronyms,
-                titles,
-            )
+            ),
+            acronyms,
+            titles,
         )
 
         out_path = cordis_output_path(fp)
