@@ -70,7 +70,7 @@ def projects_records(fp: str = "h2020") -> List[Dict]:
     return records
 
 
-def acronymity(fp: str):
+def acronymity(fp: str) -> pd.DataFrame:
     """Acronym matches and scores for CORDIS projects in a framework programme.
 
     Args:
