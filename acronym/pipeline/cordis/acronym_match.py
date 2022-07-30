@@ -32,9 +32,9 @@ if __name__ == "__main__":
                     max_order=CONFIG["acronym_match"]["max_order"],
                     stops=title_stops,
                 ),
+                acronyms,
+                titles,
             ),
-            acronyms,
-            titles,
         )
 
         out_path = cordis_output_path(fp)
