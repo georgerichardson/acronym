@@ -16,10 +16,12 @@ if __name__ == "__main__":
 
         logger.info(f"Finding acronynm matches for CORDIS {fp.upper()}")
 
+        config = CONFIG["acronym_match"]
+
         projects_fp = projects(fp)
         acronyms = projects_fp["acronym"].fillna("X").tolist()
         titles = projects_fp["title"].tolist()
-        with open(PROJECT_DIR / CONFIG["acronym_match"]["title_stops_path"], "r") as f:
+        with open(PROJECT_DIR / config["title_stops_path"], "r") as f:
             title_stops = f.readlines()
 
         acronymity_records = list(
@@ -27,9 +29,9 @@ if __name__ == "__main__":
                 lambda a, t: acronymity(
                     a,
                     t,
-                    min_term_len=CONFIG["acronym_match"]["min_term_len"],
-                    min_order=CONFIG["acronym_match"]["min_order"],
-                    max_order=CONFIG["acronym_match"]["max_order"],
+                    min_term_len=config["min_term_len"],
+                    min_order=config["min_order"],
+                    max_order=config["max_order"],
                     stops=title_stops,
                 ),
                 acronyms,
