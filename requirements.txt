@@ -7,3 +7,6 @@ tqdm
 filelock
 typer
 sh
+sentence-transformers
+toolz
+python-Levenshtein
