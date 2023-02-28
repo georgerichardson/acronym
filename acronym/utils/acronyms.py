@@ -22,6 +22,14 @@ def remove_multi_digits(acronym: str) -> str:
     return acronym
 
 
+def strip_punct(acronym: str) -> str:
+    """Strips punctuation from acronyms."""
+    remove_chars = r"[,|/|\?|\(|\)|\:|\;|\.]"
+    space_chars = r"[\-|_|]"
+    stripped = re.sub(remove_chars, "", acronym)
+    return re.sub(space_chars, " ", stripped)
+
+
 def remove_acronym_from_title(acronym: str, title: str) -> str:
     """Strips acronym from start of title if exact, case insensitive match
     appears."""
@@ -140,25 +148,30 @@ def acronymity(
         acronym,
         lambda a: a.lower(),
         remove_multi_digits,
+        strip_punct,
     )
 
-    title = title.lower()
+    record = {
+        "acronym": acronym,
+    }
 
-    record = {"acronym": acronym}
+    acronym = re.sub(r"\s", "", acronym)
+    record["acronym_matched"] = acronym
+
+    title_terms = pipe(
+        title,
+        lambda t: t.lower(),
+        lambda t: remove_acronym_from_title(acronym, t),
+        split_title,
+        lambda t: remove_title_stops(t, min_term_len, stops),
+    )
 
     for order in range(min_order, max_order + 1):
-        title_terms = pipe(
-            title,
-            lambda t: t.lower(),
-            remove_acronym_from_title,
-            split_title,
-            lambda t: remove_title_stops(t, min_term_len, stops),
-            lambda t: extract_nth_characters(t, order),
-        )
+        title_terms_first_chars = extract_nth_characters(title_terms, order)
 
         title_acronym, title_term_ids = find_title_acronym(
             acronym,
-            title_terms,
+            title_terms_first_chars,
         )
 
         record[f"{order}_match"] = title_acronym
