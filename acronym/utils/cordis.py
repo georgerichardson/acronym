@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import os
 from toolz.functoolz import pipe
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union
 
 from acronym import PROJECT_DIR, get_yaml_config
 from acronym.utils.io import extractall, fetch
