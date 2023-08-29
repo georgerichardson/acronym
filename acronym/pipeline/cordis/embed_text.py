@@ -16,32 +16,42 @@ from acronym.getters.cordis import projects, acronymity
 
 
 N_CPU = multiprocessing.cpu_count
-TEST = True
+TEST = False
 
-
-def fetch_encoder(model_name: str) -> SentenceTransformer:
-    """Fetches a sentence transformer model."""
-    return SentenceTransformer(model_name)
+# remove a substring from a string with whitespace or punctuation on either side
+def remove_substring(string, substring):
+    return re.sub(rf"\s*{re.escape(substring)}\s*", " ", string, flags=re.IGNORECASE)
 
 
 def embed(
-    model: SentenceTransformer, texts: Sequence, chunk_size: Optional[int] = None
+    model_name: str, texts: Sequence, chunk_size: Optional[int] = None
 ) -> np.array:
     """Embeds a sequence of texts using a sentence transformer.
 
     Args:
-        model: A sentence transformer.
+        model_name: Name of sentence transformer.
         texts: A sequence of texts.
         chunk_size: Splits the texts into chunks to be embedded sequentially.
             Useful for breaking up large sequences which might exceed memory.
+
+    Returns:
+        np.array: Embeddings.
     """
-    return encoder.encode(texts)
-    # text_chunks = partition_all(chunk_size, texts)
-    # embedding_chunks = [model.encode(tc) for tc in text_chunks]
-    # return np.concatenate(embedding_chunks)
+    encoder = SentenceTransformer(model_name)
+    if chunk_size is None:
+        return encoder.encode(texts)
+    else:
+        embeddings = []
+        for chunk in partition_all(chunk_size, texts):
+            embeddings.append(encoder.encode(chunk))
+        return np.concatenate(embeddings)
 
 
-def remove_mentions(acronyms: Sequence[str], abstracts: Sequence[str]) -> List[str]:
+def remove_mentions(
+    acronyms_original: Sequence[str],
+    acronyms_modified: Sequence[str],
+    abstracts: Sequence[str],
+) -> List[str]:
     """Removes close and exact matches of the acronym from the abstract (ignores case).
 
     Args:
@@ -52,12 +62,27 @@ def remove_mentions(acronyms: Sequence[str], abstracts: Sequence[str]) -> List[s
         List[str]: Modified abstracts.
     """
     abstracts_mod = []
-    for acronym, abstract in zip(acronyms, abstracts):
-        r = rf"({acronym}){{s<=2,i<=1,d<=2,e<=2}}"
-        matches = regex.findall(r, abstract, flags=regex.IGNORECASE)
-        for match in matches:
-            abstract = abstract.replace(match, " ")
+    for i, (acronym, acronym_mod, abstract) in enumerate(
+        zip(acronyms_original, acronyms_modified, abstracts)
+    ):
+        if i % 5000 == 0:
+            logger.info(
+                f"Removing mentions from abstract {i} of {len(acronyms_original)}"
+            )
+        pattern = rf"\b{re.escape(acronym)}\b"
+        pattern_mod = rf"\b{re.escape(acronym_mod)}\b"
+        abstract = re.sub(pattern, " ", abstract, flags=re.IGNORECASE)
+        abstract = re.sub(pattern_mod, " ", abstract, flags=re.IGNORECASE)
+
         abstracts_mod.append(abstract)
+        # r = rf"\b({re.escape(acronym)}){{s<=1,d<=1,e<=1}}\b"
+        # matches = regex.findall(r, abstract, flags=regex.IGNORECASE)
+        # print(matches)
+        # for match in matches:
+        #     if type(match) is not str:
+        #         print(match)
+        #     abstract = abstract.replace(match, " ")
+        # abstracts_mod.append(abstract)
     return abstracts_mod
 
 
@@ -120,7 +145,7 @@ def remove_exact_mentions(
     """
     abstracts_mod = []
     for acronym, abstract in zip(acronyms, abstracts):
-        abstracts_mod.append(re.sub(rf"{acronym}", "", acronym, flags=re.IGNORECASE))
+        abstracts_mod.append(re.sub(rf"{acronym}", "", abstract, flags=re.IGNORECASE))
     return abstracts_mod
 
 
@@ -132,24 +157,35 @@ if __name__ == "__main__":
         convert_str_to_pathlib_path(f"{PROJECT_DIR}/acronym/config/embedding.yml")
     )
 
-    for fp in cordis_config["framework_programmes"]:
-        logger.info(f"Embedding text for {fp}")
+    # for fp in cordis_config["framework_programmes"]:
+    for fp in ["fp7", "h2020"]:
+        logger.info(f"Processing acronyms and abstracts for {fp}")
+        n = 50 if TEST else None
         projects_fp = projects(fp)
-        acronyms_fp = acronymity(fp)
+        abstracts = projects_fp["objective"].iloc[:n].fillna("").tolist()
+        acronyms_original_fp = projects_fp["acronym"].iloc[:n].fillna("").tolist()
+        acronyms_modified_fp = acronymity(fp)["acronym"].iloc[:n].fillna("").tolist()
 
-        if TEST:
-            projects_fp = projects_fp.iloc[:50]
-            acronyms_fp = acronyms_fp.iloc[:50]
-
+        logger.info(f"Removing acronym mentions from abstracts")
         abstracts_modified = remove_mentions(
-            acronyms_fp["acronym"],
-            projects_fp["objective"].fillna(""),
+            acronyms_original_fp, acronyms_modified_fp, abstracts
         )
+        if len(abstracts_modified) > 1000:
+            chunk_size = 1000
+            print(
+                f"Chunking {len(abstracts_modified)} into chunks of size {chunk_size}"
+            )
+        else:
+            chunk_size = None
 
-        encoder = fetch_encoder(embed_config["sentence_transformer_model"])
+        model_name = embed_config["sentence_transformer_model"]
 
-        abstract_embeddings_fp = embed(encoder, abstracts_modified)
-        acronym_embeddings_fp = embed(encoder, acronyms_fp["acronym"].tolist())
+        logger.info(f"Generating abstract embeddings")
+        abstract_embeddings_fp = embed(
+            model_name, abstracts_modified, chunk_size=chunk_size
+        )
+        logger.info(f"Generating acronym embeddings")
+        acronym_embeddings_fp = embed(model_name, acronyms_modified_fp)
 
         np.save(
             f"{PROJECT_DIR}/outputs/data/cordis/{fp}/abstract_embeddings",

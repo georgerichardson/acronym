@@ -24,7 +24,7 @@ def remove_multi_digits(acronym: str) -> str:
 
 def strip_punct(acronym: str) -> str:
     """Strips punctuation from acronyms."""
-    remove_chars = r"[,|/|\?|\(|\)|\:|\;|\.]"
+    remove_chars = r"[,|/|\?|\(|\)|\:|\;|\.|\+|\*]"
     space_chars = r"[\-|_|]"
     stripped = re.sub(remove_chars, "", acronym)
     return re.sub(space_chars, " ", stripped)

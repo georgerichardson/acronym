@@ -10,3 +10,4 @@ sh
 sentence-transformers
 toolz
 python-Levenshtein
+spacy
