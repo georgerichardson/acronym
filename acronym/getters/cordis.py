@@ -15,6 +15,7 @@ abbreviation must be passed for `fp`. This can be one of:
 """
 import os
 import pandas as pd
+import numpy as np
 from typing import Dict, List
 import xmltodict
 
@@ -81,3 +82,29 @@ def acronymity(fp: str) -> pd.DataFrame:
     """
     path = cordis_output_path(fp) / "acronyms.csv"
     return pd.read_csv(path)
+
+
+def acronym_embeddings(fp: str) -> np.array:
+    """Acronym embeddings for CORDIS projects in a framework programme.
+
+    Args:
+        fp: Framework programme abbreviation.
+
+    Returns:
+        Array of acronym embeddings.
+    """
+    fname = cordis_output_path(fp) / "acronym_embeddings.npy"
+    return np.load(fname)
+
+
+def abstract_embeddings(fp: str) -> np.array:
+    """Abstract embeddings for CORDIS projects in a framework programme.
+
+    Args:
+        fp: Framework programme abbreviation.
+
+    Returns:
+        Array of abstract embeddings.
+    """
+    fname = cordis_output_path(fp) / "abstract_embeddings.npy"
+    return np.load(fname)
