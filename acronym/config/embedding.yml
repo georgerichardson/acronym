@@ -1,0 +1,2 @@
+sentence_transformer_model: all-MiniLM-L12-v2
+spacy_model: en_core_web_sm

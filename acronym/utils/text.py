@@ -46,3 +46,20 @@ def filter_text_by_length(
             False otherwise.
     """
     return list(map(lambda a: len(a) >= min_len, texts))
+
+
+def char_jaccard(str_1: str, str_2: str) -> float:
+    """Calculates the Jaccard index of the characters in two strings.
+
+    Args:
+        str_1 (str): First string.
+        str_2 (str): Second string.
+
+    Returns:
+        float: Jaccard index.
+    """
+    chars_1 = set(str_1)
+    chars_2 = set(str_2)
+    u = chars_1.union(chars_2)
+    i = chars_1.intersection(chars_2)
+    return len(i) / len(u)

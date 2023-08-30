@@ -1,4 +1,5 @@
 from Levenshtein import distance
+import pandas as pd
 import re
 from toolz.functoolz import pipe
 
@@ -20,6 +21,14 @@ def remove_multi_digits(acronym: str) -> str:
         if len(num) > 1:
             acronym = acronym.replace(num, "")
     return acronym
+
+
+def strip_punct(acronym: str) -> str:
+    """Strips punctuation from acronyms."""
+    remove_chars = r"[,|/|\?|\(|\)|\:|\;|\.|\+|\*]"
+    space_chars = r"[\-|_|]"
+    stripped = re.sub(remove_chars, "", acronym)
+    return re.sub(space_chars, " ", stripped)
 
 
 def remove_acronym_from_title(acronym: str, title: str) -> str:
@@ -140,31 +149,67 @@ def acronymity(
         acronym,
         lambda a: a.lower(),
         remove_multi_digits,
+        strip_punct,
     )
 
-    title = title.lower()
+    record = {
+        "acronym": acronym,
+    }
 
-    record = {"acronym": acronym}
+    acronym = re.sub(r"\s", "", acronym)
+    record["acronym_matched"] = acronym
+
+    title_terms = pipe(
+        title,
+        lambda t: t.lower(),
+        lambda t: remove_acronym_from_title(acronym, t),
+        split_title,
+        lambda t: remove_title_stops(t, min_term_len, stops),
+    )
 
     for order in range(min_order, max_order + 1):
-        title_terms = pipe(
-            title,
-            lambda t: t.lower(),
-            remove_acronym_from_title,
-            split_title,
-            lambda t: remove_title_stops(t, min_term_len, stops),
-            lambda t: extract_nth_characters(t, order),
-        )
+        title_terms_first_chars = extract_nth_characters(title_terms, order)
 
         title_acronym, title_term_ids = find_title_acronym(
             acronym,
-            title_terms,
+            title_terms_first_chars,
         )
 
-        record[f"{order}_match"] = title_acronym
-        record[f"{order}_dist"] = distance(acronym, title_acronym)
-        record[f"{order}_n_terms_used"] = len(title_term_ids)
+        record[f"match_{order}"] = title_acronym
+        record[f"dist_{order}"] = distance(acronym, title_acronym)
+        record[f"n_terms_used_{order}"] = len(title_term_ids)
 
     record["n_title_terms"] = len(title_terms)
 
     return record
+
+
+def normalise_acronym_scores(
+    acronyms: pd.DataFrame,
+    min_order: int,
+    max_order: int,
+) -> pd.DataFrame:
+    """Normalises the acronymity scores of each project.
+
+    Args:
+        acronyms: Dataframe of acronymity scores.
+        min_order: The minimum number of first characters from each title token
+            included.
+        max_order: The maximum number of first characters from each title token
+            included.
+
+    Returns:
+        acronyms: Dataframe of acronymity scores with normalised scores.
+    """
+    # calculate the fraction of title terms used to construct the match
+    acronyms["frac_terms_used"] = acronyms["n_terms_used_1"] / acronyms["n_title_terms"]
+    for i in range(min_order, max_order + 1):
+        # normalise the Levenshtein distance between the acronym and the match
+        acronyms[f"dist_{i}_norm"] = (
+            acronyms[f"dist_{i}"] / acronyms["acronym"].str.len()
+        )
+        # calculate a combimed similarity score
+        acronyms[f"acronymity_{i}"] = (1 - acronyms[f"dist_{i}_norm"]) * acronyms[
+            "frac_terms_used"
+        ]
+    return acronyms
