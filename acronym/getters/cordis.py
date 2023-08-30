@@ -108,3 +108,16 @@ def abstract_embeddings(fp: str) -> np.array:
     """
     fname = cordis_output_path(fp) / "abstract_embeddings.npy"
     return np.load(fname)
+
+
+def title_embeddings(fp: str) -> np.array:
+    """Title embeddings for CORDIS projects in a framework programme.
+
+    Args:
+        fp: Framework programme abbreviation.
+
+    Returns:
+        Array of title embeddings.
+    """
+    fname = cordis_output_path(fp) / "title_embeddings.npy"
+    return np.load(fname)
