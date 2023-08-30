@@ -157,12 +157,14 @@ if __name__ == "__main__":
         convert_str_to_pathlib_path(f"{PROJECT_DIR}/acronym/config/embedding.yml")
     )
 
-    # for fp in cordis_config["framework_programmes"]:
-    for fp in ["fp7", "h2020"]:
-        logger.info(f"Processing acronyms and abstracts for {fp}")
+    for fp in cordis_config["framework_programmes"]:
+        # for fp in ["fp7", "h2020"]:
+        logger.info(f"Processing acronyms, titles and abstracts for {fp}")
         n = 50 if TEST else None
+
         projects_fp = projects(fp)
         abstracts = projects_fp["objective"].iloc[:n].fillna("").tolist()
+        titles = projects_fp["title"].iloc[:n].fillna("").tolist()
         acronyms_original_fp = projects_fp["acronym"].iloc[:n].fillna("").tolist()
         acronyms_modified_fp = acronymity(fp)["acronym"].iloc[:n].fillna("").tolist()
 
@@ -170,6 +172,12 @@ if __name__ == "__main__":
         abstracts_modified = remove_mentions(
             acronyms_original_fp, acronyms_modified_fp, abstracts
         )
+
+        logger.info(f"Removing acronym mentions from titles")
+        titles_modified = remove_mentions(
+            acronyms_original_fp, acronyms_modified_fp, titles
+        )
+
         if len(abstracts_modified) > 1000:
             chunk_size = 1000
             print(
@@ -184,12 +192,18 @@ if __name__ == "__main__":
         abstract_embeddings_fp = embed(
             model_name, abstracts_modified, chunk_size=chunk_size
         )
+        logger.info(f"Generating title embeddings")
+        title_embeddings_fp = embed(model_name, titles_modified, chunk_size=chunk_size)
         logger.info(f"Generating acronym embeddings")
         acronym_embeddings_fp = embed(model_name, acronyms_modified_fp)
 
         np.save(
             f"{PROJECT_DIR}/outputs/data/cordis/{fp}/abstract_embeddings",
             abstract_embeddings_fp,
+        )
+        np.save(
+            f"{PROJECT_DIR}/outputs/data/cordis/{fp}/title_embeddings",
+            title_embeddings_fp,
         )
         np.save(
             f"{PROJECT_DIR}/outputs/data/cordis/{fp}/acronym_embeddings",
