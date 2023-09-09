@@ -208,8 +208,9 @@ def normalise_acronym_scores(
         acronyms[f"dist_{i}_norm"] = (
             acronyms[f"dist_{i}"] / acronyms["acronym"].str.len()
         )
+        acronyms[f"sim_{i}_norm"] = 1 - acronyms[f"dist_{i}_norm"]
         # calculate a combimed similarity score
-        acronyms[f"acronymity_{i}"] = (1 - acronyms[f"dist_{i}_norm"]) * acronyms[
-            "frac_terms_used"
-        ]
+        acronyms[f"acronymity_{i}"] = (
+            acronyms[f"sim_{i}_norm"] * acronyms["frac_terms_used"]
+        )
     return acronyms
